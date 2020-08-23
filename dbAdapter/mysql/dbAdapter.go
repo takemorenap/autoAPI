@@ -1,25 +1,24 @@
-package pgsql
+package mysql
 
 import (
 	"autoAPI/config/fields/database/field"
 	"autoAPI/utility/withCase"
 	"database/sql"
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type dbAdapter struct {
 }
 
-func (_ dbAdapter) GetFields(url string, tableName withCase.WithCase) ([]field.Field, error) {
-	db, err := sql.Open("postgres", url)
+func (_ dbAdapter) FillFields(url string, tableName withCase.WithCase) ([]field.Field, error) {
+	db, err := sql.Open("mysql", url)
 	if err != nil {
 		return nil, err
 	}
 	rows, err := db.Query(`
 		SELECT column_name, data_type
 		FROM information_schema.columns
-		WHERE table_schema = 'public'
-  		AND table_name = $1;
+  		WHERE table_name = ?;
 	`, tableName.CamelCase())
 	if err != nil {
 		return nil, err

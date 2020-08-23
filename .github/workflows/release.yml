@@ -4,18 +4,15 @@ on:
   push:
     tags: 
       - 'v*'
-
 jobs:
-  build:
+  release-binary:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
     - name: Setup Go
       uses: actions/setup-go@v2.1.1
       with:
         go-version: 1.14
-
     - name: Build
       run: |
         make build-release
@@ -24,9 +21,19 @@ jobs:
       with:
         body: ${{ github.event.head_commit.message }}
         files: |
-          autoAPI-windows-amd64.exe
-          autoAPI-linux-amd64
-          autoAPI-darwin-amd64
+          autoAPI-windows-amd64.zip
+          autoAPI-linux-amd64.zip
+          autoAPI-darwin-amd64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
+  release-docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: |
+        docker build . -t auto-api
+        docker tag auto-api ${{ secrets.DOCKER_USERNAME }}/auto-api:${GITHUB_REF#refs/*/}
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        docker push ${{ secrets.DOCKER_USERNAME }}/auto-api
